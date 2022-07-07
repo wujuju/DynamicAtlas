@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
@@ -13,12 +14,35 @@ public class AtlasPacker : MonoBehaviour
     bool isSupportGpuCopy = true;
     Texture2D atlasTexture;
     int pixelsPerUnit = 100;
+    List<Sprite> sourceImages;
 
     private void Start()
     {
         if (SystemInfo.copyTextureSupport == CopyTextureSupport.None)
         {
             isSupportGpuCopy = false;
+        }
+
+        sourceImages = new List<Sprite>();
+        for (int i = 1; i <= 9; i++)
+        {
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(string.Format("Assets/Image/turn/000{0}.png", i));
+            sourceImages.Add(sprite);
+            sprite = AssetDatabase.LoadAssetAtPath<Sprite>(string.Format("Assets/Image/walk/000{0}.png", i));
+            sourceImages.Add(sprite);
+        }
+
+        for (int i = 0; i < sourceImages.Count; i++)
+        {
+            GameObject obj = new GameObject();
+            Image image = obj.AddComponent<Image>();
+            image.sprite = sourceImages[i];
+            image.transform.SetParent(transform);
+            float width = (Screen.width - image.sprite.texture.width) * 0.5f;
+            float height = (Screen.height - image.sprite.texture.height) * 0.5f;
+            image.transform.localPosition = new Vector3(Random.Range(-width, width),
+                Random.Range(-height, height));
+            image.SetNativeSize();
         }
 
         mImageMaps.Clear();
@@ -42,7 +66,7 @@ public class AtlasPacker : MonoBehaviour
         CreateBestRects(rectangles, ref sizeW, ref sizeH);
 
         if (atlasTexture == null)
-            atlasTexture = new Texture2D(sizeW, sizeH, TextureFormat.RGB24, false);
+            atlasTexture = new Texture2D(sizeW, sizeH, TextureFormat.BGRA32, false);
 
         for (int i = 0; i < rectangles.Count; i++)
         {
@@ -72,7 +96,7 @@ public class AtlasPacker : MonoBehaviour
             }
         }
 
-        Debug.LogError(string.Format("耗时:{0}ms", watch.ElapsedMilliseconds));
+        Debug.LogError(string.Format("width={1}  height={2}耗时:{0}ms", watch.ElapsedMilliseconds, sizeW, sizeH));
     }
 
     public void CreateBestRects(List<MyRect> rectangles, ref int sizeW, ref int sizeH)
@@ -151,7 +175,7 @@ public class AtlasPacker : MonoBehaviour
 
         public override string ToString()
         {
-            return string.Format("x:{0} y:{1} widht:{2} height:{3}", x, y , width , height);
+            return string.Format("x:{0} y:{1} widht:{2} height:{3}", x, y, width, height);
         }
     }
 }
